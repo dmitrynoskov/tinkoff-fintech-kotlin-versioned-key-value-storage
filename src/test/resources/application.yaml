@@ -5,3 +5,8 @@ spring:
     url: jdbc:tc:postgresql:13:///test_db
     username: test_user
     password: test_password
+
+client:
+  timeout:
+    connect: 30
+    read: 60

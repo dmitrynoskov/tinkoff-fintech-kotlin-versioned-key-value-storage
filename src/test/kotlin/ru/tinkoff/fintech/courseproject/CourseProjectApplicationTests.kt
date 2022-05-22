@@ -157,6 +157,24 @@ class CourseProjectApplicationTests(private val mockMvc: MockMvc, private val ob
                     )
                 ) shouldBe HttpStatus.BAD_REQUEST.value()
             }
+            scenario("failure: invalid time format") {
+                addPersonResponseStatus(userIvan) shouldBe HttpStatus.OK.value()
+                getKVOnTimeResponseStatus(
+                    userIvan.phoneNumber,
+                    "2022-05-22 19:10:28"
+                ) shouldBe HttpStatus.BAD_REQUEST.value()
+            }
+            scenario("failure: duplicate keys in request") {
+                addPersonResponseStatus(userIvan) shouldBe HttpStatus.OK.value()
+                addMultiKVResponseStatus(
+                    MultiUpdateRequest(
+                        userIvan.phoneNumber, arrayOf(
+                            KeyValuePair(KEY_1, VALUE_1),
+                            KeyValuePair(KEY_1, VALUE_2)
+                        )
+                    )
+                ) shouldBe HttpStatus.BAD_REQUEST.value()
+            }
         }
         feature("delete") {
             scenario("success: delete user") {
@@ -215,6 +233,9 @@ class CourseProjectApplicationTests(private val mockMvc: MockMvc, private val ob
         } else {
             mockMvc.get("/user/{phoneNumber}?time={time}", phoneNumber, time).readResponse()
         }
+
+    private fun getKVOnTimeResponseStatus(phoneNumber: String, time: String) =
+        mockMvc.get("/user/{phoneNumber}?time={time}", phoneNumber, time).andReturn().response.status
 
     private fun getHistoryKV(phoneNumber: String, key: String, page: Int, perPage: Int): UserResponseWithKV =
         mockMvc.get(

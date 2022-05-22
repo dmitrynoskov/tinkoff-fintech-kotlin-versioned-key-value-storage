@@ -25,6 +25,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("org.liquibase:liquibase-core")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springdoc:springdoc-openapi-ui:1.6.8")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:5.3.0")
     testImplementation("io.kotest.extensions:kotest-extensions-spring:1.1.1")

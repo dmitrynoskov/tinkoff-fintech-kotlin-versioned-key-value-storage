@@ -7,12 +7,11 @@ import ru.tinkoff.fintech.courseproject.dto.MultiUpdateRequest
 import ru.tinkoff.fintech.courseproject.dto.SingleUpdateRequest
 import ru.tinkoff.fintech.courseproject.dto.UserRequest
 import ru.tinkoff.fintech.courseproject.dto.UserResponseWithKV
-import ru.tinkoff.fintech.courseproject.exception.BadNumberException
-import ru.tinkoff.fintech.courseproject.exception.NoSuchKeyExistsException
-import ru.tinkoff.fintech.courseproject.exception.NoSuchUserExistsException
-import ru.tinkoff.fintech.courseproject.util.mapMultiRequestToListSingleRequest
-import ru.tinkoff.fintech.courseproject.util.mapToUserResponseWithKV
+import ru.tinkoff.fintech.courseproject.exception.*
 import ru.tinkoff.fintech.courseproject.repository.JdbcRepository
+import ru.tinkoff.fintech.courseproject.util.findDuplicateKeys
+import ru.tinkoff.fintech.courseproject.util.mapToUserResponseWithKV
+import ru.tinkoff.fintech.courseproject.util.toListSingleRequest
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -26,7 +25,7 @@ class KeyValueStorageService(
         if (userRequest.phoneNumber.isEmpty() || !client.validate(userRequest.phoneNumber).valid) {
             throw BadNumberException(userRequest.phoneNumber)
         }
-        if (!repository.saveUser(userRequest)) throw IllegalArgumentException("aaa")
+        if (!repository.saveUser(userRequest)) throw UserAlreadyRegisteredException(userRequest.phoneNumber)
     }
 
     @Transactional
@@ -40,7 +39,10 @@ class KeyValueStorageService(
     fun addMultiKV(multiUpdateRequest: MultiUpdateRequest) {
         repository.getUser(multiUpdateRequest.phoneNumber)
             ?: throw NoSuchUserExistsException(multiUpdateRequest.phoneNumber)
-        mapMultiRequestToListSingleRequest(multiUpdateRequest).forEach { repository.saveKV(it, LocalDateTime.now()) }
+        if (multiUpdateRequest.findDuplicateKeys().isNotEmpty()) {
+            throw DuplicateKeysException(multiUpdateRequest.findDuplicateKeys().toString())
+        }
+        multiUpdateRequest.toListSingleRequest().forEach { repository.saveKV(it, LocalDateTime.now()) }
     }
 
     @Transactional(readOnly = true)
@@ -73,6 +75,7 @@ class KeyValueStorageService(
         if (!repository.deleteUser(phoneNumber)) throw NoSuchUserExistsException(phoneNumber)
     }
 
+    @Transactional
     fun deleteKV(phoneNumber: String, key: String) {
         repository.getUser(phoneNumber) ?: throw NoSuchUserExistsException(phoneNumber)
         if (!repository.deleteKV(phoneNumber, key)) throw NoSuchKeyExistsException(key)
