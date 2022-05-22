@@ -1,12 +1,14 @@
 server.port: 8081
 
 spring:
-  datasource.url: ${JDBC_DATABASE_URL}
-  datasource.username: ${JDBC_DATABASE_USERNAME}
-  datasource.password: ${JDBC_DATABASE_PASSWORD}
-  #datasource.url: jdbc:postgresql://localhost:6432/hh
-  #datasource.username: hh
-  #datasource.password: hh
+  datasource:
+    url: ${JDBC_DATABASE_URL:}
+    username: ${JDBC_DATABASE_USERNAME}
+    password: ${JDBC_DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    #url: jdbc:postgresql://localhost:6432/hh
+    #username: hh
+    #password: hh
 
 validator:
   address: https://phonevalidation.abstractapi.com/v1
