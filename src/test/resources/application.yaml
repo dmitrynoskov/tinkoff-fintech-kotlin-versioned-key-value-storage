@@ -1,0 +1,7 @@
+server.port: 8081
+spring:
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:postgresql:13:///test_db
+    username: test_user
+    password: test_password

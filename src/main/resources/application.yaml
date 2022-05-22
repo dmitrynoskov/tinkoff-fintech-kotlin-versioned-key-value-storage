@@ -1,0 +1,10 @@
+server.port: 8081
+
+spring:
+  datasource.url: jdbc:postgresql://localhost:6432/hh
+  datasource.username: hh
+  datasource.password: hh
+
+validator:
+  address: https://phonevalidation.abstractapi.com/v1
+  token: 4cb84ecdd635491799714ba32dcaf2fd
