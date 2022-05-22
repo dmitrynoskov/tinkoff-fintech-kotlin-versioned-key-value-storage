@@ -21,3 +21,9 @@ CREATE TABLE record
     update_time TIMESTAMP    NOT NULL,
     UNIQUE (user_id, key, revision)
 );
+
+--changeset Dmitry:3
+CREATE INDEX user_phone_index ON user_info(phone_number);
+CREATE INDEX record_user_index ON record(user_id);
+CREATE INDEX record_key_index ON record(key);
+CREATE INDEX record_update_time_index ON record(update_time);
