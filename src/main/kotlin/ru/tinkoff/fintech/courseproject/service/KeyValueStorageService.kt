@@ -7,7 +7,11 @@ import ru.tinkoff.fintech.courseproject.dto.MultiUpdateRequest
 import ru.tinkoff.fintech.courseproject.dto.SingleUpdateRequest
 import ru.tinkoff.fintech.courseproject.dto.UserRequest
 import ru.tinkoff.fintech.courseproject.dto.UserResponseWithKV
-import ru.tinkoff.fintech.courseproject.exception.*
+import ru.tinkoff.fintech.courseproject.exception.BadNumberException
+import ru.tinkoff.fintech.courseproject.exception.DuplicateKeysException
+import ru.tinkoff.fintech.courseproject.exception.NoSuchKeyExistsException
+import ru.tinkoff.fintech.courseproject.exception.NoSuchUserExistsException
+import ru.tinkoff.fintech.courseproject.exception.UserAlreadyRegisteredException
 import ru.tinkoff.fintech.courseproject.repository.JdbcRepository
 import ru.tinkoff.fintech.courseproject.util.findDuplicateKeys
 import ru.tinkoff.fintech.courseproject.util.mapToUserResponseWithKV
@@ -40,7 +44,7 @@ class KeyValueStorageService(
         repository.getUser(multiUpdateRequest.phoneNumber)
             ?: throw NoSuchUserExistsException(multiUpdateRequest.phoneNumber)
         if (multiUpdateRequest.findDuplicateKeys().isNotEmpty()) {
-            throw DuplicateKeysException(multiUpdateRequest.findDuplicateKeys().toString())
+            throw DuplicateKeysException(multiUpdateRequest.findDuplicateKeys())
         }
         multiUpdateRequest.toListSingleRequest().forEach { repository.saveKV(it, LocalDateTime.now()) }
     }

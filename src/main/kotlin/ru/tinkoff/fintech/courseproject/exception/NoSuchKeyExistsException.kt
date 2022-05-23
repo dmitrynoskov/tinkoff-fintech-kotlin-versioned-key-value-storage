@@ -1,4 +1,4 @@
 package ru.tinkoff.fintech.courseproject.exception
 
-class NoSuchKeyExistsException(message: String) : IllegalArgumentException(message) {
+class NoSuchKeyExistsException(key: String) : IllegalArgumentException("no such key $key exists") {
 }

@@ -25,8 +25,8 @@ class OpenApiConfiguration {
     )
 
     @Bean
-    fun consumerTypeHeaderOpenAPICustomiser(): OpenApiCustomiser? {
-        return OpenApiCustomiser { openApi: OpenAPI ->
+    fun consumerTypeHeaderOpenAPICustomiser(): OpenApiCustomiser? =
+        OpenApiCustomiser { openApi: OpenAPI ->
             openApi.paths.values.stream().flatMap { pathItem: PathItem ->
                 pathItem.readOperations().stream()
             }
@@ -36,5 +36,5 @@ class OpenApiConfiguration {
                     )
                 }
         }
-    }
+
 }

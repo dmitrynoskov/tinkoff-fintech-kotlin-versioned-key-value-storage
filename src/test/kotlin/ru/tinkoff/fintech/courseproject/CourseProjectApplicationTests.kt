@@ -15,9 +15,19 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.test.web.servlet.*
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.ResultActionsDsl
+import org.springframework.test.web.servlet.delete
+import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
 import ru.tinkoff.fintech.courseproject.client.PhoneValidationClient
-import ru.tinkoff.fintech.courseproject.dto.*
+import ru.tinkoff.fintech.courseproject.dto.ClientResponse
+import ru.tinkoff.fintech.courseproject.dto.KeyValuePair
+import ru.tinkoff.fintech.courseproject.dto.MultiUpdateRequest
+import ru.tinkoff.fintech.courseproject.dto.SingleUpdateRequest
+import ru.tinkoff.fintech.courseproject.dto.UserRequest
+import ru.tinkoff.fintech.courseproject.dto.UserResponse
+import ru.tinkoff.fintech.courseproject.dto.UserResponseWithKV
 import java.lang.Thread.sleep
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -42,7 +52,7 @@ class CourseProjectApplicationTests(private val mockMvc: MockMvc, private val ob
     }
 
     override suspend fun beforeEach(testCase: TestCase) {
-        jdbcTemplate.update("DELETE FROM user_info")
+        jdbcTemplate.update(DELETE_QUERY)
     }
 
     init {
@@ -270,6 +280,7 @@ class CourseProjectApplicationTests(private val mockMvc: MockMvc, private val ob
         private val userWithWrongNumber = UserRequest("Ivan", "Ivan@mail.ru", WRONG_PHONE_NUMBER)
         private val userWithEmptyNumber = UserRequest("Ivan", "Ivan@mail.ru", "")
         private val userIvanResponse = UserResponse(userIvan.name, userIvan.email, userIvan.phoneNumber)
+        private const val DELETE_QUERY = "DELETE FROM user_info"
     }
 
 }
