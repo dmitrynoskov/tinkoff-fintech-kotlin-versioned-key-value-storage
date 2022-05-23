@@ -25,4 +25,6 @@ class UserService(
         if (!repository.deleteUser(phoneNumber)) throw NoSuchUserExistsException(phoneNumber)
     }
 
+    fun getAllUsers(page: Int, perPage: Int) = repository.getUserList(page, perPage)
+
 }

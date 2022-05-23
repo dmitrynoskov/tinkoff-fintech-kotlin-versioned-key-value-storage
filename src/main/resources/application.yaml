@@ -22,3 +22,5 @@ client:
 jackson-datetime-format: yyyy-MM-dd'T'HH:mm:ss
 
 key-history-limit: 10
+
+default-page-size: 20

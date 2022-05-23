@@ -7,6 +7,7 @@ import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.core.test.TestCase
 import io.kotest.extensions.spring.SpringExtension
+import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.verify
@@ -76,6 +77,26 @@ class CourseProjectApplicationTests(
             scenario("failure: person with this phone number is already registered") {
                 addPersonResponseStatus(userIvan) shouldBe HttpStatus.OK.value()
                 addPersonResponseStatus(userIvan) shouldBe HttpStatus.BAD_REQUEST.value()
+            }
+        }
+        feature("get person list") {
+            scenario("success") {
+                addPersonResponseStatus(userIvan) shouldBe HttpStatus.OK.value()
+                addPersonResponseStatus(userAndrew) shouldBe HttpStatus.OK.value()
+                addPersonResponseStatus(userMax) shouldBe HttpStatus.OK.value()
+                val personList = getAllUsers(0, 2)
+                personList shouldContainInOrder listOf(
+                    UserResponse(
+                        userAndrew.name,
+                        userAndrew.email,
+                        userAndrew.phoneNumber
+                    ),
+                    UserResponse(
+                        userIvan.name,
+                        userIvan.email,
+                        userIvan.phoneNumber
+                    )
+                )
             }
         }
         feature("save and receive key-value") {
@@ -252,6 +273,11 @@ class CourseProjectApplicationTests(
         }
             .andReturn().response.status
 
+    private fun getAllUsers(page: Int, perPage: Int): List<UserResponse> =
+        mockMvc.get(
+            "/user/all?page={page}&per_page={perPage}", page, perPage
+        ).readResponse()
+
     private fun addSingleKVResponseStatus(singleUpdateRequest: SingleUpdateRequest) =
         mockMvc.post("/kv/single") {
             contentType = MediaType.APPLICATION_JSON; content = objectMapper.writeValueAsString(singleUpdateRequest)
@@ -304,6 +330,8 @@ class CourseProjectApplicationTests(
         private const val VALUE_2 = "value 2"
         private const val VALUE_3 = "value 3"
         private val userIvan = UserRequest("Ivan", "Ivan@mail.ru", PHONE_NUMBER)
+        private val userAndrew = UserRequest("Andrew", "Andrew@yahoo.com", "+79501111111")
+        private val userMax = UserRequest("Max", "Maxx@yahoo.com", "+79509999988")
         private val userWithWrongNumber = UserRequest("Ivan", "Ivan@mail.ru", WRONG_PHONE_NUMBER)
         private val userWithEmptyNumber = UserRequest("Ivan", "Ivan@mail.ru", "")
         private val userWithBlankNumber = UserRequest("Ivan", "Ivan@mail.ru", " ")

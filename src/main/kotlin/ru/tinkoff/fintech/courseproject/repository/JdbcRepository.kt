@@ -17,6 +17,14 @@ class JdbcRepository(
     private val userMapper: UserMapper
 ) {
 
+    fun getUserList(page: Int, perPage: Int): List<UserResponse> =
+        jdbcTemplate.queryForStream(SELECT_ALL_USERS_QUERY,
+            PreparedStatementSetter {
+                it.setInt(1, perPage)
+                it.setInt(2, page * perPage)
+            }, userMapper
+        ).toList()
+
     fun getUser(phoneNumber: String): UserResponse? =
         jdbcTemplate.queryForStream(
             SELECT_USER_QUERY,
@@ -94,6 +102,10 @@ class JdbcRepository(
         jdbcTemplate.update(TRIM_KV_QUERY, phoneNumber, key, maxSize)
 
     private companion object {
+        private const val SELECT_ALL_USERS_QUERY = """ SELECT name, email, phone_number FROM user_info
+                    ORDER BY name
+                    LIMIT ?
+                    OFFSET ?"""
         private const val SELECT_USER_QUERY = "SELECT name, email, phone_number FROM user_info WHERE phone_number = ?"
         private const val INSERT_USER_QUERY =
             "INSERT INTO user_info(phone_number, name, email) VALUES (?, ?, ?) ON CONFLICT DO NOTHING"

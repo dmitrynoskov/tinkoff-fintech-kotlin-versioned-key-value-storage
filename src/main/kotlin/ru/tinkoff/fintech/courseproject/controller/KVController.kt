@@ -1,5 +1,6 @@
 package ru.tinkoff.fintech.courseproject.controller
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -15,7 +16,10 @@ import ru.tinkoff.fintech.courseproject.service.KeyValueStorageService
 
 @RestController
 @RequestMapping("/kv")
-class KVController(private val keyValueService: KeyValueStorageService) {
+class KVController(
+    private val keyValueService: KeyValueStorageService,
+    @Value("\${default-page-size}") private val defaultPageSize: Int
+) {
 
     @PostMapping("/single")
     fun addSingleKV(@RequestBody singleUpdateRequest: SingleUpdateRequest) =
@@ -41,7 +45,7 @@ class KVController(private val keyValueService: KeyValueStorageService) {
         @RequestParam("per_page") perPage: Int?
     ): UserResponseWithKV {
         val actualPage = page ?: 0
-        val actualPerPage = perPage ?: 20
+        val actualPerPage = perPage ?: defaultPageSize
         return keyValueService.getHistoryKV(phoneNumber, key, actualPage, actualPerPage)
     }
 
