@@ -10,3 +10,7 @@ client:
   timeout:
     connect: 30
     read: 60
+
+jackson:
+  datetime:
+    format: yyyy-MM-dd'T'HH:mm:ss

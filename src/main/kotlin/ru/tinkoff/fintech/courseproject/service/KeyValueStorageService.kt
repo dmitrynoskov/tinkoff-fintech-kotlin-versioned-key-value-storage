@@ -1,17 +1,14 @@
 package ru.tinkoff.fintech.courseproject.service
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import ru.tinkoff.fintech.courseproject.client.PhoneValidationClient
 import ru.tinkoff.fintech.courseproject.dto.MultiUpdateRequest
 import ru.tinkoff.fintech.courseproject.dto.SingleUpdateRequest
-import ru.tinkoff.fintech.courseproject.dto.UserRequest
 import ru.tinkoff.fintech.courseproject.dto.UserResponseWithKV
-import ru.tinkoff.fintech.courseproject.exception.BadNumberException
 import ru.tinkoff.fintech.courseproject.exception.DuplicateKeysException
 import ru.tinkoff.fintech.courseproject.exception.NoSuchKeyExistsException
 import ru.tinkoff.fintech.courseproject.exception.NoSuchUserExistsException
-import ru.tinkoff.fintech.courseproject.exception.UserAlreadyRegisteredException
 import ru.tinkoff.fintech.courseproject.repository.JdbcRepository
 import ru.tinkoff.fintech.courseproject.util.findDuplicateKeys
 import ru.tinkoff.fintech.courseproject.util.mapToUserResponseWithKV
@@ -22,15 +19,8 @@ import java.time.format.DateTimeFormatter
 @Service
 class KeyValueStorageService(
     private val repository: JdbcRepository,
-    private val client: PhoneValidationClient
+    @Value("\${jackson.datetime.format}") private val dateTimePattern: String
 ) {
-
-    fun addUser(userRequest: UserRequest) {
-        if (userRequest.phoneNumber.isEmpty() || !client.validate(userRequest.phoneNumber).valid) {
-            throw BadNumberException(userRequest.phoneNumber)
-        }
-        if (!repository.saveUser(userRequest)) throw UserAlreadyRegisteredException(userRequest.phoneNumber)
-    }
 
     @Transactional
     fun addSingleKV(singleUpdateRequest: SingleUpdateRequest) {
@@ -61,7 +51,7 @@ class KeyValueStorageService(
         val userResponse = repository.getUser(phoneNumber) ?: throw NoSuchUserExistsException(phoneNumber)
         val sqlRecordList = repository.getKVOnTime(
             phoneNumber,
-            LocalDateTime.parse(time, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+            LocalDateTime.parse(time, DateTimeFormatter.ofPattern(dateTimePattern))
         )
         return mapToUserResponseWithKV(userResponse, sqlRecordList)
     }
@@ -73,10 +63,6 @@ class KeyValueStorageService(
             phoneNumber, key, page, perPage
         )
         return mapToUserResponseWithKV(userResponse, sqlRecordList)
-    }
-
-    fun deleteUser(phoneNumber: String) {
-        if (!repository.deleteUser(phoneNumber)) throw NoSuchUserExistsException(phoneNumber)
     }
 
     @Transactional

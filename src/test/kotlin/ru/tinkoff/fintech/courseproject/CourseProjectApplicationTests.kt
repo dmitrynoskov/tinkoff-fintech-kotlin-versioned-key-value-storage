@@ -9,7 +9,9 @@ import io.kotest.core.test.TestCase
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.shouldBe
 import io.mockk.every
+import io.mockk.verify
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpStatus
@@ -35,7 +37,11 @@ import kotlin.text.Charsets.UTF_8
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class CourseProjectApplicationTests(private val mockMvc: MockMvc, private val objectMapper: ObjectMapper) :
+class CourseProjectApplicationTests(
+    private val mockMvc: MockMvc,
+    private val objectMapper: ObjectMapper,
+    @Value("\${jackson.datetime.format}") private val dateTimePattern: String
+) :
     FeatureSpec() {
 
     @MockkBean
@@ -62,7 +68,9 @@ class CourseProjectApplicationTests(private val mockMvc: MockMvc, private val ob
             }
             scenario("failure: invalid phone number") {
                 addPersonResponseStatus(userWithWrongNumber) shouldBe HttpStatus.BAD_REQUEST.value()
+                addPersonResponseStatus(userWithBlankNumber) shouldBe HttpStatus.BAD_REQUEST.value()
                 addPersonResponseStatus(userWithEmptyNumber) shouldBe HttpStatus.BAD_REQUEST.value()
+                verify(exactly = 1) { phoneValidationClient.validate(any()) }
             }
             scenario("failure: person with this phone number is already registered") {
                 addPersonResponseStatus(userIvan) shouldBe HttpStatus.OK.value()
@@ -226,30 +234,30 @@ class CourseProjectApplicationTests(private val mockMvc: MockMvc, private val ob
             .andReturn().response.status
 
     private fun addSingleKVResponseStatus(singleUpdateRequest: SingleUpdateRequest) =
-        mockMvc.post("/single") {
+        mockMvc.post("/kv/single") {
             contentType = MediaType.APPLICATION_JSON; content = objectMapper.writeValueAsString(singleUpdateRequest)
         }
             .andReturn().response.status
 
     private fun addMultiKVResponseStatus(multiUpdateRequest: MultiUpdateRequest) =
-        mockMvc.post("/multi") {
+        mockMvc.post("/kv/multi") {
             contentType = MediaType.APPLICATION_JSON; content = objectMapper.writeValueAsString(multiUpdateRequest)
         }
             .andReturn().response.status
 
     private fun getKVOnTime(phoneNumber: String, time: String? = null): UserResponseWithKV =
         if (time == null) {
-            mockMvc.get("/user/{phoneNumber}", phoneNumber).readResponse()
+            mockMvc.get("/kv/{phoneNumber}", phoneNumber).readResponse()
         } else {
-            mockMvc.get("/user/{phoneNumber}?time={time}", phoneNumber, time).readResponse()
+            mockMvc.get("/kv/{phoneNumber}?time={time}", phoneNumber, time).readResponse()
         }
 
     private fun getKVOnTimeResponseStatus(phoneNumber: String, time: String) =
-        mockMvc.get("/user/{phoneNumber}?time={time}", phoneNumber, time).andReturn().response.status
+        mockMvc.get("/kv/{phoneNumber}?time={time}", phoneNumber, time).andReturn().response.status
 
     private fun getHistoryKV(phoneNumber: String, key: String, page: Int, perPage: Int): UserResponseWithKV =
         mockMvc.get(
-            "/user/history/{phoneNumber}?key={key}&page={page}&per_page={perPage}",
+            "/kv/history/{phoneNumber}?key={key}&page={page}&per_page={perPage}",
             phoneNumber,
             key,
             page,
@@ -260,13 +268,13 @@ class CourseProjectApplicationTests(private val mockMvc: MockMvc, private val ob
         mockMvc.delete("/user/{phoneNumber}", phoneNumber).andReturn().response.status
 
     private fun deleteKeyResponseStatus(phoneNumber: String, key: String) =
-        mockMvc.delete("/key/{phoneNumber}?key={key}", phoneNumber, key).andReturn().response.status
+        mockMvc.delete("/kv/{phoneNumber}?key={key}", phoneNumber, key).andReturn().response.status
 
     private inline fun <reified T> ResultActionsDsl.readResponse(expectedStatus: HttpStatus = HttpStatus.OK): T =
         this.andExpect { status { isEqualTo(expectedStatus.value()) } }.andReturn().response.getContentAsString(UTF_8)
             .let { if (T::class == String::class) it as T else objectMapper.readValue(it) }
 
-    private fun LocalDateTime.format() = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss").format(this)
+    private fun LocalDateTime.format() = DateTimeFormatter.ofPattern(dateTimePattern).format(this)
 
     private companion object {
         private const val WRONG_PHONE_NUMBER = "123"
@@ -279,6 +287,7 @@ class CourseProjectApplicationTests(private val mockMvc: MockMvc, private val ob
         private val userIvan = UserRequest("Ivan", "Ivan@mail.ru", PHONE_NUMBER)
         private val userWithWrongNumber = UserRequest("Ivan", "Ivan@mail.ru", WRONG_PHONE_NUMBER)
         private val userWithEmptyNumber = UserRequest("Ivan", "Ivan@mail.ru", "")
+        private val userWithBlankNumber = UserRequest("Ivan", "Ivan@mail.ru", " ")
         private val userIvanResponse = UserResponse(userIvan.name, userIvan.email, userIvan.phoneNumber)
         private const val DELETE_QUERY = "DELETE FROM user_info"
     }
