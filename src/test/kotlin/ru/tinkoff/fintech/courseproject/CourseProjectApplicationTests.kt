@@ -40,7 +40,8 @@ import kotlin.text.Charsets.UTF_8
 class CourseProjectApplicationTests(
     private val mockMvc: MockMvc,
     private val objectMapper: ObjectMapper,
-    @Value("\${jackson.datetime.format}") private val dateTimePattern: String
+    @Value("\${jackson-datetime-format}") private val dateTimePattern: String,
+    @Value("\${key-history-limit}") private val keyHistoryLimit: Int? = null
 ) :
     FeatureSpec() {
 
@@ -140,6 +141,24 @@ class CourseProjectApplicationTests(
                 userResponseWithKV.records.first().key shouldBe KEY_1
                 userResponseWithKV.records.first().value shouldBe VALUE_3
                 userResponseWithKV.records.first().revision shouldBe 2
+            }
+            scenario("success: limit values history") {
+                addPersonResponseStatus(userIvan) shouldBe HttpStatus.OK.value()
+                keyHistoryLimit?.let {
+                    repeat(2 * keyHistoryLimit) {
+                        addSingleKVResponseStatus(
+                            SingleUpdateRequest(
+                                userIvan.phoneNumber,
+                                KEY_1,
+                                VALUE_1
+                            )
+                        ) shouldBe HttpStatus.OK.value()
+                    }
+                    val userResponseWithKV = getHistoryKV(userIvan.phoneNumber, KEY_1, 0, keyHistoryLimit)
+                    userResponseWithKV.user shouldBe userIvanResponse
+                    userResponseWithKV.records.first().revision shouldBe keyHistoryLimit
+                    userResponseWithKV.records.last().revision shouldBe keyHistoryLimit * 2 - 1
+                }
             }
             scenario("success: receive values actual in particular time") {
                 addPersonResponseStatus(userIvan) shouldBe HttpStatus.OK.value()

@@ -85,19 +85,13 @@ class JdbcRepository(
 
 
     fun deleteUser(phoneNumber: String): Boolean =
-        jdbcTemplate.update(
-            DELETE_USER_QUERY,
-            phoneNumber
-        ) > 0
-
+        jdbcTemplate.update(DELETE_USER_QUERY, phoneNumber) > 0
 
     fun deleteKV(phoneNumber: String, key: String): Boolean =
-        jdbcTemplate.update(
-            DELETE_KV_QUERY,
-            phoneNumber,
-            key
-        ) > 0
+        jdbcTemplate.update(DELETE_KV_QUERY, phoneNumber, key) > 0
 
+    fun trimKeyHistory(phoneNumber: String, key: String, maxSize: Int) =
+        jdbcTemplate.update(TRIM_KV_QUERY, phoneNumber, key, maxSize)
 
     private companion object {
         private const val SELECT_USER_QUERY = "SELECT name, email, phone_number FROM user_info WHERE phone_number = ?"
@@ -146,5 +140,14 @@ class JdbcRepository(
         private const val DELETE_USER_QUERY = "DELETE FROM user_info WHERE phone_number = ?"
         private const val DELETE_KV_QUERY = """DELETE FROM record USING user_info
                     WHERE record.user_id = user_info.user_id AND phone_number = ? AND key = ?"""
+        private const val TRIM_KV_QUERY = """DELETE FROM record
+                    WHERE record_id IN 
+                        (
+                            SELECT record_id 
+                            FROM record JOIN user_info ui ON record.user_id = ui.user_id 
+                            WHERE phone_number = ? AND key = ? 
+                            ORDER BY revision DESC 
+                            OFFSET ?
+                        )"""
     }
 }

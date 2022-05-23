@@ -9,7 +9,7 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import java.time.format.DateTimeFormatter
 
 @Configuration
-class JacksonConfiguration(@Value("\${jackson.datetime.format}") private val pattern: String) {
+class JacksonConfiguration(@Value("\${jackson-datetime-format}") private val pattern: String) {
 
     @Bean
     fun jsonCustomizer(): Jackson2ObjectMapperBuilderCustomizer =

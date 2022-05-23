@@ -1,4 +1,5 @@
 server.port: 8081
+
 spring:
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
@@ -11,6 +12,6 @@ client:
     connect: 30
     read: 60
 
-jackson:
-  datetime:
-    format: yyyy-MM-dd'T'HH:mm:ss
+jackson-datetime-format: yyyy-MM-dd'T'HH:mm:ss
+
+key-history-limit: 10

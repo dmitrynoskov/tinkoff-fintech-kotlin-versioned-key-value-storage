@@ -19,7 +19,8 @@ import java.time.format.DateTimeFormatter
 @Service
 class KeyValueStorageService(
     private val repository: JdbcRepository,
-    @Value("\${jackson.datetime.format}") private val dateTimePattern: String
+    @Value("\${jackson-datetime-format}") private val dateTimePattern: String,
+    @Value("\${key-history-limit}") private val keyHistoryLimit: Int? = null
 ) {
 
     @Transactional
@@ -27,6 +28,13 @@ class KeyValueStorageService(
         repository.getUser(singleUpdateRequest.phoneNumber)
             ?: throw NoSuchUserExistsException(singleUpdateRequest.phoneNumber)
         repository.saveKV(singleUpdateRequest, LocalDateTime.now())
+        keyHistoryLimit?.let {
+            repository.trimKeyHistory(
+                singleUpdateRequest.phoneNumber,
+                singleUpdateRequest.key,
+                keyHistoryLimit
+            )
+        }
     }
 
     @Transactional
