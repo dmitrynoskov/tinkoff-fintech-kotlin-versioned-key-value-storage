@@ -6,11 +6,11 @@ import ru.tinkoff.fintech.courseproject.dto.UserRequest
 import ru.tinkoff.fintech.courseproject.exception.BadNumberException
 import ru.tinkoff.fintech.courseproject.exception.NoSuchUserExistsException
 import ru.tinkoff.fintech.courseproject.exception.UserAlreadyRegisteredException
-import ru.tinkoff.fintech.courseproject.repository.JdbcRepository
+import ru.tinkoff.fintech.courseproject.repository.UserRepository
 
 @Service
 class UserService(
-    private val repository: JdbcRepository,
+    private val userRepository: UserRepository,
     private val client: PhoneValidationClient
 ) {
 
@@ -18,13 +18,13 @@ class UserService(
         if (userRequest.phoneNumber.isBlank() || !client.validate(userRequest.phoneNumber).valid) {
             throw BadNumberException(userRequest.phoneNumber)
         }
-        if (!repository.saveUser(userRequest)) throw UserAlreadyRegisteredException(userRequest.phoneNumber)
+        if (!userRepository.saveUser(userRequest)) throw UserAlreadyRegisteredException(userRequest.phoneNumber)
     }
 
     fun deleteUser(phoneNumber: String) {
-        if (!repository.deleteUser(phoneNumber)) throw NoSuchUserExistsException(phoneNumber)
+        if (!userRepository.deleteUser(phoneNumber)) throw NoSuchUserExistsException(phoneNumber)
     }
 
-    fun getAllUsers(page: Int, perPage: Int) = repository.getUserList(page, perPage)
+    fun getAllUsers(page: Int, perPage: Int) = userRepository.getAllUsers(page, perPage)
 
 }

@@ -42,7 +42,7 @@ class CourseProjectApplicationTests(
     private val mockMvc: MockMvc,
     private val objectMapper: ObjectMapper,
     @Value("\${jackson-datetime-format}") private val dateTimePattern: String,
-    @Value("\${key-history-limit}") private val keyHistoryLimit: Int? = null
+    @Value("\${key-history-limit:}") private val keyHistoryLimit: Int?
 ) :
     FeatureSpec() {
 

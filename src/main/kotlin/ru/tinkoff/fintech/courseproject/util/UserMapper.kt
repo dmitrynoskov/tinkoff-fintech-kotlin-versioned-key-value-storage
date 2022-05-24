@@ -1,4 +1,4 @@
-package ru.tinkoff.fintech.courseproject.repository
+package ru.tinkoff.fintech.courseproject.util
 
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.stereotype.Component

@@ -17,7 +17,7 @@ import ru.tinkoff.fintech.courseproject.service.UserService
 @RequestMapping("/user")
 class UserController(
     private val userService: UserService,
-    @Value("\${default-page-size}") private val defaultPageSize: Int
+    @Value("\${default-page-size:20}") private val defaultPageSize: Int
 ) {
 
     @PostMapping

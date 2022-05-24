@@ -1,6 +1,11 @@
 package ru.tinkoff.fintech.courseproject.util
 
-import ru.tinkoff.fintech.courseproject.dto.*
+import ru.tinkoff.fintech.courseproject.dto.KeyValuePairWithVersion
+import ru.tinkoff.fintech.courseproject.dto.MultiUpdateRequest
+import ru.tinkoff.fintech.courseproject.dto.RecordSqlRow
+import ru.tinkoff.fintech.courseproject.dto.SingleUpdateRequest
+import ru.tinkoff.fintech.courseproject.dto.UserResponse
+import ru.tinkoff.fintech.courseproject.dto.UserResponseWithKV
 
 fun MultiUpdateRequest.toListSingleRequest() =
     this.records.map { SingleUpdateRequest(this.phoneNumber, it.key, it.value) }

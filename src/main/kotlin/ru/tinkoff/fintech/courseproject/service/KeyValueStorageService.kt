@@ -9,7 +9,8 @@ import ru.tinkoff.fintech.courseproject.dto.UserResponseWithKV
 import ru.tinkoff.fintech.courseproject.exception.DuplicateKeysException
 import ru.tinkoff.fintech.courseproject.exception.NoSuchKeyExistsException
 import ru.tinkoff.fintech.courseproject.exception.NoSuchUserExistsException
-import ru.tinkoff.fintech.courseproject.repository.JdbcRepository
+import ru.tinkoff.fintech.courseproject.repository.KVRepository
+import ru.tinkoff.fintech.courseproject.repository.UserRepository
 import ru.tinkoff.fintech.courseproject.util.findDuplicateKeys
 import ru.tinkoff.fintech.courseproject.util.mapToUserResponseWithKV
 import ru.tinkoff.fintech.courseproject.util.toListSingleRequest
@@ -18,18 +19,19 @@ import java.time.format.DateTimeFormatter
 
 @Service
 class KeyValueStorageService(
-    private val repository: JdbcRepository,
+    private val kvRepository: KVRepository,
+    private val userRepository: UserRepository,
     @Value("\${jackson-datetime-format}") private val dateTimePattern: String,
-    @Value("\${key-history-limit}") private val keyHistoryLimit: Int? = null
+    @Value("\${key-history-limit:}") private val keyHistoryLimit: Int?
 ) {
 
     @Transactional
     fun addSingleKV(singleUpdateRequest: SingleUpdateRequest) {
-        repository.getUser(singleUpdateRequest.phoneNumber)
+        userRepository.getUser(singleUpdateRequest.phoneNumber)
             ?: throw NoSuchUserExistsException(singleUpdateRequest.phoneNumber)
-        repository.saveKV(singleUpdateRequest, LocalDateTime.now())
+        kvRepository.saveKV(singleUpdateRequest, LocalDateTime.now())
         keyHistoryLimit?.let {
-            repository.trimKeyHistory(
+            kvRepository.trimKeyHistory(
                 singleUpdateRequest.phoneNumber,
                 singleUpdateRequest.key,
                 keyHistoryLimit
@@ -39,25 +41,25 @@ class KeyValueStorageService(
 
     @Transactional
     fun addMultiKV(multiUpdateRequest: MultiUpdateRequest) {
-        repository.getUser(multiUpdateRequest.phoneNumber)
+        userRepository.getUser(multiUpdateRequest.phoneNumber)
             ?: throw NoSuchUserExistsException(multiUpdateRequest.phoneNumber)
         if (multiUpdateRequest.findDuplicateKeys().isNotEmpty()) {
             throw DuplicateKeysException(multiUpdateRequest.findDuplicateKeys())
         }
-        multiUpdateRequest.toListSingleRequest().forEach { repository.saveKV(it, LocalDateTime.now()) }
+        multiUpdateRequest.toListSingleRequest().forEach { kvRepository.saveKV(it, LocalDateTime.now()) }
     }
 
     @Transactional(readOnly = true)
     fun getLatestKV(phoneNumber: String): UserResponseWithKV {
-        val userResponse = repository.getUser(phoneNumber) ?: throw NoSuchUserExistsException(phoneNumber)
-        val sqlRecordList = repository.getLatestKV(phoneNumber)
+        val userResponse = userRepository.getUser(phoneNumber) ?: throw NoSuchUserExistsException(phoneNumber)
+        val sqlRecordList = kvRepository.getLatestKV(phoneNumber)
         return mapToUserResponseWithKV(userResponse, sqlRecordList)
     }
 
     @Transactional(readOnly = true)
     fun getKVOnTime(phoneNumber: String, time: String): UserResponseWithKV {
-        val userResponse = repository.getUser(phoneNumber) ?: throw NoSuchUserExistsException(phoneNumber)
-        val sqlRecordList = repository.getKVOnTime(
+        val userResponse = userRepository.getUser(phoneNumber) ?: throw NoSuchUserExistsException(phoneNumber)
+        val sqlRecordList = kvRepository.getKVOnTime(
             phoneNumber,
             LocalDateTime.parse(time, DateTimeFormatter.ofPattern(dateTimePattern))
         )
@@ -66,8 +68,8 @@ class KeyValueStorageService(
 
     @Transactional(readOnly = true)
     fun getHistoryKV(phoneNumber: String, key: String, page: Int, perPage: Int): UserResponseWithKV {
-        val userResponse = repository.getUser(phoneNumber) ?: throw NoSuchUserExistsException(phoneNumber)
-        val sqlRecordList = repository.getHistoryKV(
+        val userResponse = userRepository.getUser(phoneNumber) ?: throw NoSuchUserExistsException(phoneNumber)
+        val sqlRecordList = kvRepository.getHistoryKV(
             phoneNumber, key, page, perPage
         )
         return mapToUserResponseWithKV(userResponse, sqlRecordList)
@@ -75,8 +77,8 @@ class KeyValueStorageService(
 
     @Transactional
     fun deleteKV(phoneNumber: String, key: String) {
-        repository.getUser(phoneNumber) ?: throw NoSuchUserExistsException(phoneNumber)
-        if (!repository.deleteKV(phoneNumber, key)) throw NoSuchKeyExistsException(key)
+        userRepository.getUser(phoneNumber) ?: throw NoSuchUserExistsException(phoneNumber)
+        if (!kvRepository.deleteKV(phoneNumber, key)) throw NoSuchKeyExistsException(key)
     }
 
 }

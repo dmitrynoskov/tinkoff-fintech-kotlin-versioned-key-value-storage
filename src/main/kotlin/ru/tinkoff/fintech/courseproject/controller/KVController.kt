@@ -18,7 +18,7 @@ import ru.tinkoff.fintech.courseproject.service.KeyValueStorageService
 @RequestMapping("/kv")
 class KVController(
     private val keyValueService: KeyValueStorageService,
-    @Value("\${default-page-size}") private val defaultPageSize: Int
+    @Value("\${default-page-size:20}") private val defaultPageSize: Int
 ) {
 
     @PostMapping("/single")
