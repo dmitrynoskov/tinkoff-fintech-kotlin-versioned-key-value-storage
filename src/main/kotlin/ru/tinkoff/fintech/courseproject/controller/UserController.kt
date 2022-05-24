@@ -38,4 +38,7 @@ class UserController(
         return userService.getAllUsers(actualPage, actualPerPage)
     }
 
+    @GetMapping("/{phoneNumber}")
+    fun getUserKeys(@PathVariable phoneNumber: String) = userService.getUserKeys(phoneNumber)
+
 }

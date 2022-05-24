@@ -24,13 +24,13 @@ import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import ru.tinkoff.fintech.courseproject.client.PhoneValidationClient
-import ru.tinkoff.fintech.courseproject.dto.ClientResponse
 import ru.tinkoff.fintech.courseproject.dto.KeyValuePair
 import ru.tinkoff.fintech.courseproject.dto.MultiUpdateRequest
 import ru.tinkoff.fintech.courseproject.dto.SingleUpdateRequest
 import ru.tinkoff.fintech.courseproject.dto.UserRequest
 import ru.tinkoff.fintech.courseproject.dto.UserResponse
 import ru.tinkoff.fintech.courseproject.dto.UserResponseWithKV
+import ru.tinkoff.fintech.courseproject.dto.ValidatorResponse
 import java.lang.Thread.sleep
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -55,8 +55,8 @@ class CourseProjectApplicationTests(
     override fun extensions(): List<Extension> = listOf(SpringExtension)
 
     override suspend fun beforeTest(testCase: TestCase) {
-        every { phoneValidationClient.validate(WRONG_PHONE_NUMBER) } returns ClientResponse(false)
-        every { phoneValidationClient.validate(not(WRONG_PHONE_NUMBER)) } returns ClientResponse(true)
+        every { phoneValidationClient.getValidatorResponse(WRONG_PHONE_NUMBER) } returns ValidatorResponse(false)
+        every { phoneValidationClient.getValidatorResponse(not(WRONG_PHONE_NUMBER)) } returns ValidatorResponse(true)
     }
 
     override suspend fun beforeEach(testCase: TestCase) {
@@ -72,7 +72,7 @@ class CourseProjectApplicationTests(
                 addPersonResponseStatus(userWithWrongNumber) shouldBe HttpStatus.BAD_REQUEST.value()
                 addPersonResponseStatus(userWithBlankNumber) shouldBe HttpStatus.BAD_REQUEST.value()
                 addPersonResponseStatus(userWithEmptyNumber) shouldBe HttpStatus.BAD_REQUEST.value()
-                verify(exactly = 1) { phoneValidationClient.validate(any()) }
+                verify(exactly = 1) { phoneValidationClient.getValidatorResponse(any()) }
             }
             scenario("failure: person with this phone number is already registered") {
                 addPersonResponseStatus(userIvan) shouldBe HttpStatus.OK.value()
@@ -97,6 +97,30 @@ class CourseProjectApplicationTests(
                         userIvan.phoneNumber
                     )
                 )
+            }
+            scenario("success: empty list") {
+                getAllUsers(0, 10) shouldBe emptyList()
+            }
+        }
+        feature("get key list") {
+            scenario("success") {
+                addPersonResponseStatus(userIvan) shouldBe HttpStatus.OK.value()
+                addMultiKVResponseStatus(
+                    MultiUpdateRequest(
+                        userIvan.phoneNumber, arrayOf(
+                            KeyValuePair(KEY_2, VALUE_2),
+                            KeyValuePair(KEY_1, VALUE_1)
+                        )
+                    )
+                ) shouldBe HttpStatus.OK.value()
+                getUserKeys(userIvan.phoneNumber) shouldContainInOrder listOf(KEY_1, KEY_2)
+            }
+            scenario("success: empty list") {
+                addPersonResponseStatus(userIvan) shouldBe HttpStatus.OK.value()
+                getUserKeys(userIvan.phoneNumber) shouldBe emptyList()
+            }
+            scenario("failure: no such user exists") {
+                getUserKeysResponseStatus(PHONE_NUMBER) shouldBe HttpStatus.BAD_REQUEST.value()
             }
         }
         feature("save and receive key-value") {
@@ -233,6 +257,10 @@ class CourseProjectApplicationTests(
                     )
                 ) shouldBe HttpStatus.BAD_REQUEST.value()
             }
+            scenario("failure: no such key exists in key history request") {
+                addPersonResponseStatus(userIvan) shouldBe HttpStatus.OK.value()
+                getHistoryKVResponseStatus(userIvan.phoneNumber, KEY_1, 0, 10) shouldBe HttpStatus.BAD_REQUEST.value()
+            }
         }
         feature("delete") {
             scenario("success: delete user") {
@@ -278,6 +306,16 @@ class CourseProjectApplicationTests(
             "/user/all?page={page}&per_page={perPage}", page, perPage
         ).readResponse()
 
+    private fun getUserKeys(phoneNumber: String): List<String> =
+        mockMvc.get(
+            "/user/{phoneNumber}", phoneNumber
+        ).readResponse()
+
+    private fun getUserKeysResponseStatus(phoneNumber: String) =
+        mockMvc.get(
+            "/user/{phoneNumber}", phoneNumber
+        ).andReturn().response.status
+
     private fun addSingleKVResponseStatus(singleUpdateRequest: SingleUpdateRequest) =
         mockMvc.post("/kv/single") {
             contentType = MediaType.APPLICATION_JSON; content = objectMapper.writeValueAsString(singleUpdateRequest)
@@ -308,6 +346,15 @@ class CourseProjectApplicationTests(
             page,
             perPage
         ).readResponse()
+
+    private fun getHistoryKVResponseStatus(phoneNumber: String, key: String, page: Int, perPage: Int) =
+        mockMvc.get(
+            "/kv/history/{phoneNumber}?key={key}&page={page}&per_page={perPage}",
+            phoneNumber,
+            key,
+            page,
+            perPage
+        ).andReturn().response.status
 
     private fun deletePersonResponseStatus(phoneNumber: String) =
         mockMvc.delete("/user/{phoneNumber}", phoneNumber).andReturn().response.status

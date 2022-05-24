@@ -43,6 +43,13 @@ class UserRepository(
     fun deleteUser(phoneNumber: String): Boolean =
         jdbcTemplate.update(DELETE_USER_QUERY, phoneNumber) > 0
 
+    fun getUserKeys(phoneNumber: String): List<String> =
+        jdbcTemplate.queryForList(
+            SELECT_USER_KEYS_QUERY,
+            String::class.java,
+            phoneNumber
+        )
+
     private companion object {
         private const val SELECT_ALL_USERS_QUERY = """ SELECT name, email, phone_number FROM user_info
                     ORDER BY name
@@ -52,5 +59,10 @@ class UserRepository(
         private const val INSERT_USER_QUERY =
             "INSERT INTO user_info(phone_number, name, email) VALUES (?, ?, ?) ON CONFLICT DO NOTHING"
         private const val DELETE_USER_QUERY = "DELETE FROM user_info WHERE phone_number = ?"
+        private const val SELECT_USER_KEYS_QUERY = """SELECT key FROM record
+            JOIN user_info ui ON ui.user_id = record.user_id
+            WHERE phone_number = ?
+            GROUP BY key
+            ORDER BY key"""
     }
 }

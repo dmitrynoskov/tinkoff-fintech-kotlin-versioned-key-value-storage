@@ -69,6 +69,7 @@ class KeyValueStorageService(
     @Transactional(readOnly = true)
     fun getHistoryKV(phoneNumber: String, key: String, page: Int, perPage: Int): UserResponseWithKV {
         val userResponse = userRepository.getUser(phoneNumber) ?: throw NoSuchUserExistsException(phoneNumber)
+        if (!kvRepository.isKeyExists(phoneNumber, key)) throw NoSuchKeyExistsException(key)
         val sqlRecordList = kvRepository.getHistoryKV(
             phoneNumber, key, page, perPage
         )

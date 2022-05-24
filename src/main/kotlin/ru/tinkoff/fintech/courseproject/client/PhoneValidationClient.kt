@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.getForObject
-import ru.tinkoff.fintech.courseproject.dto.ClientResponse
+import ru.tinkoff.fintech.courseproject.dto.ValidatorResponse
 
 @Service
 class PhoneValidationClient(
@@ -13,7 +13,7 @@ class PhoneValidationClient(
     @Value("\${validator.token}") private val phoneValidatorToken: String
 ) {
 
-    fun validate(phoneNumber: String): ClientResponse =
+    fun getValidatorResponse(phoneNumber: String): ValidatorResponse =
         restTemplate.getForObject(
             "$phoneValidatorAddress$GET_VALIDATION_BY_NUMBER",
             phoneValidatorToken,

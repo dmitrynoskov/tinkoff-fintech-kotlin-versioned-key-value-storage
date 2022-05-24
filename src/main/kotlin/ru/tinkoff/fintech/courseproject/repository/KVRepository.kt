@@ -68,6 +68,15 @@ class KVRepository(
     fun trimKeyHistory(phoneNumber: String, key: String, maxSize: Int) =
         jdbcTemplate.update(TRIM_KV_QUERY, phoneNumber, key, maxSize)
 
+    fun isKeyExists(phoneNumber: String, key: String) =
+        jdbcTemplate.queryForObject(
+            EXISTS_KEY_QUERY,
+            Boolean::class.java,
+            phoneNumber,
+            key
+        )
+
+
     private companion object {
         private const val INSERT_KV_QUERY = """WITH id_table AS (SELECT user_id FROM user_info WHERE phone_number = ?)
                     INSERT INTO record (user_id, key, value, revision, update_time)
@@ -120,5 +129,9 @@ class KVRepository(
                             ORDER BY revision DESC 
                             OFFSET ?
                         )"""
+        private const val EXISTS_KEY_QUERY = """SELECT EXISTS (SELECT 1
+                FROM user_info JOIN record r ON user_info.user_id = r.user_id
+                WHERE phone_number = ? AND key = ?
+                GROUP BY key)"""
     }
 }
